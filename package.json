@@ -40,6 +40,7 @@
         "_startApp:android": "appium --allow-insecure chromedriver_autodownload -g ./report/appium --log-level debug",
         "_build:ui5_app": "cd test/ui5-app && ui5 build --all --exclude-task=* --include-task=generateComponentPreload",
         "_build:ios_app": "cd test/ui5-app/app && node copySources.js && node replace-for-app.js && node build-ios.js",
+        "_build:ios_app:device": "cd test/ui5-app/app && node copySources.js && node replace-for-app.js && node build-ios --device.js",
         "_build:android_app": "cd test/ui5-app/app && node copySources.js && node replace-for-app.js && node build-android.js",
         "_build:electron_app": "cd test/ui5-app/app && node copySources.js && node replace-for-app.js && node build-electron.js"
     },
@@ -93,6 +94,8 @@
         "replace-in-file": "^6.1.0",
         "soerver": "0.0.3",
         "wait-on": "^5.2.0",
-        "wd": "^1.13.0"
-    }
+        "wd": "^1.13.0",
+        "yargs": "^16.2.0"
+    },
+    "dependencies": {}
 }

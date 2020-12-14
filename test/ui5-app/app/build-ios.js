@@ -4,6 +4,9 @@ const fs = require('fs-extra');
 const path = require('path');
 const { execSync } = require('child_process');
 
+const yargs = require('yargs/yargs')
+const argv = yargs(process.argv).argv
+
 console.log(`[ios] Preparing installation ...`);
 
 const iosPlatformFolderPath = path.resolve('platforms', 'ios');
@@ -17,8 +20,15 @@ if (fs.existsSync(iosPlatformFolderPath)) {
     execSync(`cordova platform add ios@latest`, { stdio: 'inherit' });
 }
 
-console.log(`[ios] Starting build ...`);
-execSync(`cordova build ios --no-telemetry`, { //  use this parameter to build a ios app for on-device testing "--device"
-    stdio: 'inherit'
-});
+if (argv.device) {
+
+    console.log(`[ios] Starting build ...`);
+    execSync(`cordova build ios --no-telemetry --device`, { //  use "--device" parameter to build a ios app for on-device testing
+        stdio: 'inherit'
+    });
+} else {
+    execSync(`cordova build ios --no-telemetry`, {
+        stdio: 'inherit'
+    });
+}
 
