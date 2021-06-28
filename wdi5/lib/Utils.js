@@ -48,9 +48,8 @@ module.exports = class Util {
      * the take screenshot function is provided by wdio-ui5-service
      * @param {*} fileAppendix
      */
-    _writeScreenshot(fileAppendix) {
+    async _writeScreenshot(fileAppendix) {
         // mandatory to use the provided writescreenshot method in native app environment (after switching the to native context)
-        this.context.writescreenshot(fileAppendix);
+        await this.context.writescreenshot(fileAppendix);
     }
-
 };

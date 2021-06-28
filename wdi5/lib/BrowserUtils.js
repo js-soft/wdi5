@@ -5,9 +5,7 @@ const path = require('path');
 const Utils = require('./Utils');
 
 // Singleton
-module.exports = class BrowserUtil extends (
-    Utils
-) {
+module.exports = class BrowserUtil extends Utils {
     static _instance;
     path = {
         electron: `${this.context.getUrl()}`,
@@ -62,7 +60,7 @@ module.exports = class BrowserUtil extends (
             logger.log(`Navigating to: ${oRoute.sName}`);
 
             // only for ui5 router based navigation use this function
-            this.context.goTo({ oRoute: oRoute });
+            this.context.goTo({oRoute: oRoute});
         }
     }
 
@@ -71,12 +69,12 @@ module.exports = class BrowserUtil extends (
      * store a screenshot (as png) in a directory
      * @param {String} fileAppendix postfixed (to screenshot filename) custom identifier for the screenshot
      */
-    takeScreenshot(fileAppendix) {
+    async takeScreenshot(fileAppendix) {
         if (this.initSuccess) {
             // make sure the UI is fully loaded -> done in wdio-ui5-service
             // this.context.waitForUI5();
 
-            this._writeScreenshot(fileAppendix);
+            await this._writeScreenshot(fileAppendix);
         } else {
             logger.error('init of utils failed');
         }
@@ -86,7 +84,7 @@ module.exports = class BrowserUtil extends (
      *
      * @param {*} fileAppendix
      */
-    screenshot(fileAppendix) {
-        this.takeScreenshot(fileAppendix);
+    async screenshot(fileAppendix) {
+        await this.takeScreenshot(fileAppendix);
     }
 };

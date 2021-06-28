@@ -19,7 +19,7 @@ describe('ui5 basics: properties and navigation', () => {
     before(() => {
         Other.open();
 
-        if (parseFloat(browser.getUI5Version()) <= 1.6) {
+        if ((await browser.getUI5VersionAsFloat()) <= 1.6) {
             buttonSelector.forceSelect = true;
             buttonSelector.selector.interaction = 'root';
             listSelector.forceSelect = true;
@@ -60,7 +60,7 @@ describe('ui5 basics: properties and navigation', () => {
                 viewName: 'test.Sample.view.Other'
             }
         };
-        if (parseFloat(browser.getUI5Version()) <= 1.6) {
+        if ((await browser.getUI5VersionAsFloat()) <= 1.6) {
             resultTetSelector.forceSelect = true;
             resultTetSelector.selector.interaction = 'root';
         }

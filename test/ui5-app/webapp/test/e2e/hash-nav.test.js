@@ -1,12 +1,12 @@
 const wdi5 = require('wdi5');
 
 describe('hash-based nav', () => {
-    it('should allow the deep entry to "Other" view using the Utils and the UI5 router', () => {
+    it('should allow the deep entry to "Other" view using the Utils and the UI5 router', async () => {
         const oRouteOptions = {
             sComponentId: 'container-Sample',
             sName: 'RouteOther'
         };
-        wdi5().getUtils().goTo('', oRouteOptions);
+        await wdi5().getUtils().goTo('', oRouteOptions);
 
         const listSelector = {
             selector: {
@@ -15,17 +15,17 @@ describe('hash-based nav', () => {
             }
         };
 
-        if (parseFloat(browser.getUI5Version()) <= 1.6) {
+        if ((await browser.getUI5VersionAsFloat()) <= 1.6) {
             listSelector.forceSelect = true;
             listSelector.selector.interaction = 'root';
         }
 
-        const items = browser.asControl(listSelector).getAggregation('items');
+        const items = await (await browser.asControl(listSelector)).getAggregation('items');
         expect(items.length).toEqual(9);
     });
 
-    it('should navigate to Main view via #/', () => {
-        wdi5().getUtils().goTo('#/');
+    it('should navigate to Main view via #/', async () => {
+        await wdi5().getUtils().goTo('#/');
 
         const buttonSelector = {
             selector: {
@@ -34,20 +34,20 @@ describe('hash-based nav', () => {
             }
         };
 
-        if (parseFloat(browser.getUI5Version()) <= 1.6) {
+        if ((await browser.getUI5VersionAsFloat()) <= 1.6) {
             buttonSelector.forceSelect = true;
             // buttonSelector.selector.interaction = 'root';
         }
 
-        expect(browser.asControl(buttonSelector).getProperty('visible')).toBeTruthy();
+        expect(await (await browser.asControl(buttonSelector)).getProperty('visible')).toBeTruthy();
     });
 
-    it('should allow the deep entry to "Other" view via the UI5 router directly', () => {
+    it('should allow the deep entry to "Other" view via the UI5 router directly', async () => {
         const oRouteOptions = {
             sComponentId: 'container-Sample',
             sName: 'RouteOther'
         };
-        browser.goTo({oRoute: oRouteOptions});
+        await browser.goTo({oRoute: oRouteOptions});
 
         const listSelector = {
             selector: {
@@ -56,12 +56,12 @@ describe('hash-based nav', () => {
             }
         };
 
-        if (parseFloat(browser.getUI5Version()) <= 1.6) {
+        if ((await browser.getUI5VersionAsFloat()) <= 1.6) {
             listSelector.forceSelect = true;
             listSelector.selector.interaction = 'root';
         }
 
-        const list = browser.asControl(listSelector);
-        expect(list.getVisible()).toBeTruthy();
+        const list = await browser.asControl(listSelector);
+        expect(await list.getVisible()).toBeTruthy();
     });
 });

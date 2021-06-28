@@ -32,14 +32,20 @@ module.exports = class WDI5 {
      * create a new bridge return object for a UI5 control
      */
     constructor(controlSelector, context, forceSelect) {
+        return this;
+    }
+
+    async init(controlSelector, context, forceSelect) {
         this._context = context;
         this._controlSelector = controlSelector;
         this._wdio_ui5_key = controlSelector.wdio_ui5_key;
         this._forceSelect = forceSelect;
 
         // fire getControl just once when creating this webui5 object
-        const controlResult = this._getControl();
-        if (typeof controlResult[0] === 'string' && controlResult[0].indexOf('Error:') === -1) {
+        const controlResult = await this._getControl();
+
+        if (typeof controlResult[0] === 'string' && controlResult[0].toLowerCase().includes('error:')) {
+            // result is string and has error text -> its an error
             console.error('[WDI5] Something went wrong retrieving the control: ' + this._wdio_ui5_key);
             return this;
         } else {
@@ -47,7 +53,7 @@ module.exports = class WDI5 {
 
             // dynamic function bridge
             this._generatedUI5Methods = controlResult[1];
-            this._attachControlBridge(this._generatedUI5Methods);
+            await this._attachControlBridge(this._generatedUI5Methods);
 
             // set the sucesfull init param
             this._initialisation = true;
@@ -68,9 +74,9 @@ module.exports = class WDI5 {
     /**
      * @return {WebdriverIO.Element} the webdriver Element
      */
-    getWebElement() {
+    async getWebElement() {
         if (this._forceSelect) {
-            this.renewWebElementReference();
+            await this.renewWebElementReference();
         }
         return this._webdriverRepresentation;
     }
@@ -80,11 +86,11 @@ module.exports = class WDI5 {
      * @param {String} name
      * @return {any} content of the UI5 aggregation with name of parameter
      */
-    getAggregation(name) {
+    async getAggregation(name) {
         if (this._forceSelect) {
-            this.renewWebElementReference();
+            await this.renewWebElementReference();
         }
-        return this._getAggregation(name);
+        return await this._getAggregation(name);
     }
 
     /**
@@ -92,7 +98,7 @@ module.exports = class WDI5 {
      * @param {*} text
      * @return {WDI5} this for method chaining
      */
-    enterText(text) {
+    async enterText(text) {
         // if (this._forceSelect) {
         //     this.renewWebElementReference();
         // }
@@ -103,7 +109,7 @@ module.exports = class WDI5 {
             clearTextFirst: true,
             interactionType: 'ENTER_TEXT'
         };
-        this._interactWithControl(oOptions);
+        await this._interactWithControl(oOptions);
         return this;
     }
 
@@ -112,8 +118,8 @@ module.exports = class WDI5 {
      * this can be used to manually trigger an control reference update after a ui5 control rerendering
      * this method is also used wdi5 interally to implement the extended forceSelect option
      */
-    renewWebElementReference() {
-        const newWebElement = this._getControl()[0];
+    async renewWebElementReference() {
+        const newWebElement = (await this._getControl())[0];
         this._webElement = newWebElement;
         return newWebElement;
     }
@@ -127,8 +133,8 @@ module.exports = class WDI5 {
      * @param {WebdriverIO.BrowserObject} context
      * @returns {WDI5[]} instances of wdi5 class per control in the aggregation
      */
-    _retrieveElements(aControls, context = this._context) {
-        let aResult = [];
+    async _retrieveElements(aControls, context = this._context) {
+        let aResultOfPromises = [];
 
         // check the validity of param
         if (aControls) {
@@ -143,13 +149,13 @@ module.exports = class WDI5 {
                 };
 
                 // get WDI5 control
-                aResult.push(context.asControl(selector));
+                aResultOfPromises.push(context.asControl(selector));
             });
+
+            return await Promise.all(aResultOfPromises);
         } else {
             console.warn(this._wdio_ui5_key + ' has no aControls');
         }
-
-        return aResult;
     }
 
     /**
@@ -159,7 +165,7 @@ module.exports = class WDI5 {
      * @param {WebdriverIO.BrowserObject} context
      * @returns {WDI5[]} instances of wdi5 class per control in the aggregation
      */
-    _retrieveElement(eControl, context = this._context) {
+    async _retrieveElement(eControl, context = this._context) {
         let eResult = {};
 
         // check the validity of param
@@ -173,7 +179,7 @@ module.exports = class WDI5 {
             };
 
             // get WDI5 control
-            eResult = context.asControl(selector);
+            eResult = await context.asControl(selector);
         } else {
             console.warn(this._wdio_ui5_key + ' has no aControls');
         }
@@ -186,10 +192,10 @@ module.exports = class WDI5 {
      *
      * @param {Array} sReplFunctionNames
      */
-    _attachControlBridge(sReplFunctionNames) {
+    async _attachControlBridge(sReplFunctionNames) {
         // check the validity of param
         if (sReplFunctionNames) {
-            sReplFunctionNames.forEach((sMethodName) => {
+            sReplFunctionNames.forEach(async (sMethodName) => {
                 this[sMethodName] = this._executeControlMethod.bind(this, sMethodName, this._webElement, this._context);
             });
         } else {
@@ -205,23 +211,22 @@ module.exports = class WDI5 {
      * @param {WebdriverIO.BrowserObject} context points to either browser- or native-runtime context
      * @param  {...any} args proxied arguments to UI5 control method at runtime
      */
-    _executeControlMethod(methodName, webElement = this._webElement, context = this._context, ...args) {
+    async _executeControlMethod(methodName, webElement = this._webElement, context = this._context, ...args) {
         if (this._forceSelect) {
-            webElement = this.renewWebElementReference();
+            this._webElement = await this.renewWebElementReference();
         }
-
         // special case for custom data attached to a UI5 control:
         // pass the arguments to the event handler (like UI5 handles and expects them) also
         // also here in Node.js runtime
         if (methodName === 'fireEvent') {
             if (args[1] && typeof args[1]['eval'] === 'function') {
-                return this._fireEvent(args[0], args[1], webElement, context);
+                return await this._fireEvent(args[0], args[1], webElement, context);
             }
         }
         // returns the array of [0: "status", 1: result]
 
         // regular browser-time execution of UI5 control method
-        const result = context.executeAsync(
+        const result = await context.executeAsync(
             (webElement, methodName, args, done) => {
                 window.bridge.waitForUI5(window.wdi5.waitForUI5Options).then(() => {
                     // DOM to UI5
@@ -229,7 +234,6 @@ module.exports = class WDI5 {
                     // execute the function
                     let result = oControl[methodName].apply(oControl, args);
                     const metadata = oControl.getMetadata();
-
                     if (Array.isArray(result)) {
                         // expect the method call delivers non-primitive results (like getId())
                         // but delivers a complex/structured type
@@ -288,7 +292,7 @@ module.exports = class WDI5 {
         switch (result[2]) {
             case 'newElement':
                 // retrieve and return another instance of a wdi5 control
-                return this._retrieveElement(result[1]);
+                return await this._retrieveElement(result[1]);
             case 'element':
                 // return $self after a called method of the wdi5 instance to allow method chaining
                 return this;
@@ -299,13 +303,13 @@ module.exports = class WDI5 {
                 // check weather to retrieve all elements in the aggreation as ui5 control
                 if ((args.length > 0 && typeof args[0] === 'boolean' && args[0] === false) || args.length === 0) {
                     // get all if param is false or undefined
-                    return this._retrieveElements(result[1]);
+                    return await this._retrieveElements(result[1]);
                 } else if (args[0] && typeof args[0] === 'number') {
                     if (args[0] <= result[1].length) {
                         // retieve only one
                         // need some code of separate feature branch here
                         const wdioElement = result[1][args[0]];
-                        return this._retrieveElement(wdioElement);
+                        return await this._retrieveElement(wdioElement);
                     } else {
                         console.error(
                             `tried to get an control at index: ${args[0]} of an aggregation outside of aggregation length: ${result[1].length}`
@@ -329,8 +333,8 @@ module.exports = class WDI5 {
      * @param {WebdriverIO.BrowserObject} context
      * @return {any}
      */
-    _getAggregation(aggregationName, webElement = this._webElement, context = this._context) {
-        const result = context.executeAsync(
+    async _getAggregation(aggregationName, webElement = this._webElement, context = this._context) {
+        const result = await context.executeAsync(
             (webElement, aggregationName, done) => {
                 window.bridge.waitForUI5(window.wdi5.waitForUI5Options).then(() => {
                     // DOM to UI5
@@ -356,7 +360,7 @@ module.exports = class WDI5 {
 
         let wdiItems = [];
         if (result[0] === 'success') {
-            wdiItems = this._retrieveElements(result[1]);
+            wdiItems = await this._retrieveElements(result[1]);
         }
 
         // else return empty array
@@ -370,8 +374,8 @@ module.exports = class WDI5 {
      * @param {WebdriverIO.Element} webElement
      * @param {WebdriverIO.BrowserObject} context
      */
-    _setProperty(propertyName, propertyValue, webElement = this._webElement, context = this._context) {
-        const result = context.executeAsync(
+    async _setProperty(propertyName, propertyValue, webElement = this._webElement, context = this._context) {
+        const result = await context.executeAsync(
             (webElement, propertyName, propertyValue, done) => {
                 window.bridge.waitForUI5(window.wdi5.waitForUI5Options).then(() => {
                     try {
@@ -399,8 +403,8 @@ module.exports = class WDI5 {
      * @param {WebdriverIO.Element} webElement
      * @param {WebdriverIO.BrowserObject} context
      */
-    _hasStyleClass(className, webElement = this._webElement, context = this._context) {
-        const result = context.executeAsync(
+    async _hasStyleClass(className, webElement = this._webElement, context = this._context) {
+        const result = await context.executeAsync(
             (webElement, className, done) => {
                 window.bridge.waitForUI5(window.wdi5.waitForUI5Options).then(() => {
                     try {
@@ -427,9 +431,9 @@ module.exports = class WDI5 {
      * @param {WebdriverIO.BrowserObject} context
      * @return {any} value of the UI5 property
      */
-    _getProperty(propertyName, webElement = this._webElement, context = this._context) {
+    async _getProperty(propertyName, webElement = this._webElement, context = this._context) {
         // returns the array of [0: "status", 1: result]
-        const result = context.executeAsync(
+        const result = await context.executeAsync(
             (webElement, propertyName, done) => {
                 window.bridge.waitForUI5(window.wdi5.waitForUI5Options).then(() => {
                     // DOM to UI5
@@ -472,8 +476,8 @@ module.exports = class WDI5 {
      * @param {boolean} oOptions.clearTextFirst
      * @param {object} context
      */
-    _interactWithControl(oOptions, context = this._context) {
-        const result = context.executeAsync((oOptions, done) => {
+    async _interactWithControl(oOptions, context = this._context) {
+        const result = await context.executeAsync((oOptions, done) => {
             window.bridge
                 .waitForUI5(window.wdi5.waitForUI5Options)
                 .then(() => {
@@ -511,13 +515,13 @@ module.exports = class WDI5 {
      * @param {WebdriverIO.Element} webElement
      * @param {WebdriverIO.BrowserObject} context
      */
-    _fireEvent(eventName, oOptions, webElement = this._webElement, context = this._context) {
+    async _fireEvent(eventName, oOptions, webElement = this._webElement, context = this._context) {
         // Check the options have a eval property
         if (oOptions && oOptions.eval) {
             oOptions = '(' + oOptions.eval.toString() + ')';
         }
 
-        const result = context.executeAsync(
+        const result = await context.executeAsync(
             (webElement, eventName, oOptions, done) => {
                 window.bridge.waitForUI5(window.wdi5.waitForUI5Options).then(() => {
                     window.wdi5.Log.info('[browser wdi5] working ' + eventName + ' for ' + webElement);
@@ -559,21 +563,20 @@ module.exports = class WDI5 {
      * @param {WebdriverIO.BrowserObject} context
      * @return {[WebdriverIO.Element | String, [aProtoFunctions]]} UI5 control or error message, array of function names of this control
      */
-    _getControl(controlSelector = this._controlSelector, context = this._context) {
+    async _getControl(controlSelector = this._controlSelector, context = this._context) {
         // check whether we have a "by id regex" locator request
         if (controlSelector.selector.id && typeof controlSelector.selector.id === 'object') {
             // make it a string for serializing into browser-scope and
             // further processing there
             controlSelector.selector.id = controlSelector.selector.id.toString();
         }
-        let result = context.executeAsync((controlSelector, done) => {
+        let result = await context.executeAsync((controlSelector, done) => {
             window.bridge
                 .waitForUI5(window.wdi5.waitForUI5Options)
                 .then(() => {
                     window.wdi5.Log.info('[browser wdi5] locating ' + JSON.stringify(controlSelector));
                     controlSelector.selector = window.wdi5.createMatcher(controlSelector.selector);
-                    const control = window.bridge.findDOMElementByControlSelector(controlSelector);
-                    return control;
+                    return window.bridge.findDOMElementByControlSelector(controlSelector);
                 })
                 .then((domElement) => {
                     // window.wdi5.Log.info('[browser wdi5] control located! - Message: ' + JSON.stringify(domElement));
@@ -594,7 +597,7 @@ module.exports = class WDI5 {
         // save the webdriver representation by control id
         if (result[2]) {
             // only if the result is valid
-            this._webdriverRepresentation = $(`#${result[2]}`);
+            this._webdriverRepresentation = await $(`#${result[2]}`);
         }
 
         this._writeResultLog(result, '_getControl()');

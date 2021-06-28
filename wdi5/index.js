@@ -67,22 +67,22 @@ class _ {
     }
 }
 
-module.exports = (context, webcontext) => {
+module.exports = async (context, webcontext) => {
     if (!_instance) {
         // create new if parameters are supplied
         _instance = new _(webcontext);
 
         // wdio-ui5-service setup
         if (wdioUI5Service) {
-            new wdioUI5Service().startWDI5()
+            new wdioUI5Service().startWDI5();
         } else {
-            console.error("Dependency wdio-ui-service not found!")
+            console.error('Dependency wdio-ui-service not found!');
         }
 
-        const result = context.executeAsync((done) => {
+        const result = await context.executeAsync((done) => {
             done(window.location.href);
         });
-        console.log(`window.location.href: ${result}`)
+        console.log(`window.location.href: ${result}`);
 
         // create mocks for plugins
         cordovaMockPluginFactory.setup(_instance, context);

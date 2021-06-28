@@ -36,12 +36,12 @@ module.exports = {
      * @param {index} _ WDI5 framework index.js
      * @param {WebdriverIO.BrowserObject} context
      */
-    setup(_, context) {
+    async setup(_, context) {
         this._ = _;
         this._context = context;
 
         this._platform = this._.getUtils().getConfig('platform');
-        this._injectPlugins(this._.getUtils().getConfig().plugins);
+        await this._injectPlugins(this._.getUtils().getConfig().plugins);
         this._pluginListConfig = this._getPluginConfig();
     },
 
@@ -53,14 +53,14 @@ module.exports = {
      * @param {String} platform name
      * @param {function} setupFunction
      */
-    registerPlugin(pluginName, platform, setupFunction) {
+    async registerPlugin(pluginName, platform, setupFunction) {
         if (!this._pluginList[platform][pluginName]) {
             // register new plugin
             this._pluginList[platform][pluginName] = setupFunction;
 
             // execute setup just for plugins for the current platform
             if (platform === this._platform) {
-                this._callPluginSetup(pluginName, setupFunction);
+                await this._callPluginSetup(pluginName, setupFunction);
             }
         } else {
             // plugin with this name already registered
@@ -74,9 +74,9 @@ module.exports = {
      * executes the setup to attach the namespace and functions to the window.wdi5 object
      * @param {WDI5.plugin.configuration} pluginConf
      */
-    _injectPlugins(pluginConf) {
+    async _injectPlugins(pluginConf) {
         const sPluginConf = JSON.stringify(pluginConf);
-        const result = this._context.executeAsync((sPluginConf, done) => {
+        const result = await this._context.executeAsync((sPluginConf, done) => {
             // attach the function to be able to use the extracted method later
             if (!window.wdi5) {
                 window.wdi5 = {};
@@ -183,11 +183,11 @@ module.exports = {
     /**
      * call setup on each registered plugin
      */
-    _callPluginSetup(pluginName, setupFunction) {
+    async _callPluginSetup(pluginName, setupFunction) {
         // stringyfy the provided function to be able to inject it to the webapp context
         const sSetupFunction = '(' + setupFunction.toString() + ')';
 
-        const result = this._context.executeAsync(
+        const result = await this._context.executeAsync(
             (sSetupFunction, pluginName, done) => {
                 // create cordova plugin mock as base
                 if (!window.cordova) {
@@ -225,8 +225,8 @@ module.exports = {
      * @param {*} response which should be returned by the mock to the test
      * @return {*} result of the execution
      */
-    setPluginMockReponse(pluginName, response) {
-        const result = this._context.executeAsync(
+    async setPluginMockReponse(pluginName, response) {
+        const result = await his._context.executeAsync(
             (pluginName, response, done) => {
                 window.wdi5.setPluginMockReponse(pluginName, response);
                 done();

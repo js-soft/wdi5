@@ -27,7 +27,7 @@ describe('wdio-ui5 bridge: advanced tests', () => {
             }
         };
 
-        if (parseFloat(browser.getUI5Version()) <= 1.6) {
+        if ((await browser.getUI5VersionAsFloat()) <= 1.6) {
             // inputSelector.selector.interaction = 'root';
         }
 
@@ -56,7 +56,7 @@ describe('wdio-ui5 bridge: advanced tests', () => {
             }
         };
 
-        if (parseFloat(browser.getUI5Version()) <= 1.6) {
+        if ((await browser.getUI5VersionAsFloat()) <= 1.6) {
             inputSelector.forceSelect = true;
             // inputSelector.selector.interaction = 'root';
         }
@@ -87,7 +87,7 @@ describe('wdio-ui5 bridge: advanced tests', () => {
             }
         };
 
-        if (parseFloat(browser.getUI5Version()) <= 1.6) {
+        if ((await browser.getUI5VersionAsFloat()) <= 1.6) {
             buttonSelector.forceSelect = true;
             // buttonSelector.selector.interaction = 'root';
         }
@@ -109,7 +109,7 @@ describe('wdio-ui5 bridge: advanced tests', () => {
             }
         };
 
-        if (parseFloat(browser.getUI5Version()) <= 1.6) {
+        if ((await browser.getUI5VersionAsFloat()) <= 1.6) {
             inputSelector.forceSelect = true;
             // inputSelector.selector.interaction = 'root';
         }

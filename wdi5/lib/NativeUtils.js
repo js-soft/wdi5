@@ -55,7 +55,7 @@ module.exports = class NativeUtils extends Utils {
      * navigates in the application to a given hash
      * @param {String} hash
      */
-    goTo(hash, oRoute) {
+    async goTo(hash, oRoute) {
         if (hash) {
             logger.log(`Navigating to: ${this.path.currentPath}${hash}`);
 
@@ -63,10 +63,10 @@ module.exports = class NativeUtils extends Utils {
             // this.context.navigateTo(`${this.path.currentPath}${hash}`); // navigateTo // url
 
             // alternatively change the hash via browser function
-            this._changeHash(hash);
+            await this._changeHash(hash);
         } else {
             logger.log(`Navigating to: ${oRoute.sName}`);
-            this.context.goTo({ oRoute: oRoute });
+            this.context.goTo({oRoute: oRoute});
         }
     }
 
@@ -75,10 +75,10 @@ module.exports = class NativeUtils extends Utils {
      * @param {String} hash
      * @return {Window.location}
      */
-    _changeHash(hash) {
-        const result = this.context.executeAsync((hash, done) => {
+    async _changeHash(hash) {
+        const result = await this.context.executeAsync((hash, done) => {
             window.location.hash = hash;
-            done(window.location)
+            done(window.location);
         }, hash);
         return result;
     }
@@ -110,18 +110,17 @@ module.exports = class NativeUtils extends Utils {
      * store a screenshot (as png) in a directory
      * @param {String} fileAppendix postfixed (to screenshot filename) custom identifier for the screenshot
      */
-    takeScreenshot(fileAppendix) {
+    async takeScreenshot(fileAppendix) {
         if (this.initSuccess) {
-
             // make sure the UI is fully loaded
             // needed to be done BEFORE switching context
-            this.context.waitForUI5();
+            await his.context.waitForUI5();
 
             // We need to switch to the native context for the screenshot to work
             this.context.switchContext('NATIVE_APP');
             logger.log('current Context: ' + this.context.getContext());
 
-            this._writeScreenshot(fileAppendix)
+            await this._writeScreenshot(fileAppendix);
 
             // switch back to continue web testing
             this.context.switchContext(this.webcontext);
@@ -135,7 +134,7 @@ module.exports = class NativeUtils extends Utils {
      *
      * @param {*} fileAppendix
      */
-    screenshot(fileAppendix) {
-        this.takeScreenshot(fileAppendix);
+    async screenshot(fileAppendix) {
+        await this.takeScreenshot(fileAppendix);
     }
 };
